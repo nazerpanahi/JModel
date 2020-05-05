@@ -43,46 +43,70 @@ database.
 ## Example
 ### Make models
 * Make user model class in different ways:
-1. Using FieldProperties constructors
-    ```java
-    public static class UserModel extends BaseModel {
-        public UserModel() {
-            super("users");
+    1. Using FieldProperties constructors
+        ```java
+        public static class UserModel extends BaseModel {
+            public UserModel() {
+                super("users");
 
-            // just for see how to use FieldProperties class constructors
-            HashMap<String, Object> choices = new HashMap<>();
-            choices.put(ChoiceKey.NULL, false);
-            choices.put(ChoiceKey.UNIQUE, true);
+                // just for see how to use FieldProperties class constructors
+                HashMap<String, Object> choices = new HashMap<>();
+                choices.put(ChoiceKey.NULL, false);
+                choices.put(ChoiceKey.UNIQUE, true);
 
-            FieldProperties pkProps = new FieldProperties(
-                                            new NUPProperty("nn, u, p")
-                                        );
-            FieldProperties nnProps = new FieldProperties(new NUPProperty(4));
-            FieldProperties nnuProps = new FieldProperties(
-                                            new NUPProperty(choices)
-                                        );
-            this.addAllFields(
-                    new IntegerField("id", pkProps),
-                    new CharField("first_name", 80, nnProps),
-                    new CharField("last_name", 80, nnProps),
-                    new CharField("national_id", 10, nnuProps)
-            );
+                FieldProperties pkProps = new FieldProperties(
+                                                new NUPProperty("nn, u, p")
+                                            );
+                FieldProperties nnProps = new FieldProperties(new NUPProperty(4));
+                FieldProperties nnuProps = new FieldProperties(
+                                                new NUPProperty(choices)
+                                            );
+                this.addAllFields(
+                        new IntegerField("id", pkProps),
+                        new CharField("first_name", 80, nnProps),
+                        new CharField("last_name", 80, nnProps),
+                        new CharField("national_id", 10, nnuProps)
+                );
+            }
         }
+        ```
+    2. Using helper classes
+
+        ```java
+        public static class UserModel extends BaseModel {
+            public UserModel() {
+                super("users");
+
+                this.addAllFields(
+                        new IntegerField("id", NUPProperty.PK_PROPERTY),
+                        new CharField("first_name", 80, NUPProperty.NN_PROPERTY),
+                        new CharField("last_name", 80, NUPProperty.NN_PROPERTY),
+                        new CharField("national_id", 10)
+                );
+            }
+        }
+        ```
+## Make migrations
+    ```java
+    public static void makeMigrations(String user, String password)
+            throws SQLException, ClassNotFoundException {
+        MyConnection conn = new PGConnection(user, password);
+
+        Class<? extends BaseModel>[] models = new Class[]{
+                UserModel.class
+        };
+        Migrations migrations = new Migrations(models, conn);
+        migrations.makeMigrations();
+        migrations.migrateAll();
     }
     ```
-2. Using helper classes
-
+or
     ```java
-    public static class UserModel extends BaseModel {
-        public UserModel() {
-            super("users");
+    public static void makeMigrations(String user, String password)
+            throws SQLException, ClassNotFoundException {
+        MyConnection conn = new PGConnection(user, password);
 
-            this.addAllFields(
-                    new IntegerField("id", NUPProperty.PK_PROPERTY),
-                    new CharField("first_name", 80, NUPProperty.NN_PROPERTY),
-                    new CharField("last_name", 80, NUPProperty.NN_PROPERTY),
-                    new CharField("national_id", 10)
-            );
-        }
+        Migration migration = new Migration(UserModel.class, conn);
+        migration.migrate();
     }
     ```
